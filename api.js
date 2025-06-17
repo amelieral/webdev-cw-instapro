@@ -1,8 +1,8 @@
 // Замени на свой, чтобы получить независимый от других набор данных.
 // "боевая" версия инстапро лежит в ключе prod
-const personalKey = "prod";
+const personalKey = "nastya-mei";
 const baseHost = "https://webdev-hw-api.vercel.app";
-const postsHost = `${baseHost}/api/v1/${personalKey}/instapro`;
+export const postsHost = `${baseHost}/api/v1/${personalKey}/instapro`;
 
 export function getPosts({ token }) {
   return fetch(postsHost, {
@@ -65,5 +65,23 @@ export function uploadImage({ file }) {
     body: data,
   }).then((response) => {
     return response.json();
+  });
+}
+
+export function toggleLike({ token, postId, isLiked }) {
+  const action = isLiked ? "dislike" : "like";
+  return fetch(`${postsHost}/${postId}/${action}`, {
+    method: "POST",
+    headers: {
+      Authorization: token,
+    },
+  }).then(async (response) => {
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(
+        data.error || `Ошибка лайка: ${response.status}`
+      );
+    }
+    return data.post;
   });
 }
