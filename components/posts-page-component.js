@@ -1,3 +1,5 @@
+import { formatDistanceToNow } from "https://esm.sh/date-fns";
+import { ru } from "https://esm.sh/date-fns/locale";
 import { POSTS_PAGE, USER_POSTS_PAGE } from "../routes.js";
 import { renderHeaderComponent } from "./header-component.js";
 import { getPosts, toggleLike, postsHost } from "../api.js";
@@ -10,56 +12,55 @@ export function renderPostsPageComponent({ appEl, token, userId }) {
     .then((posts) => {
       console.log("Список постов:", posts);
 
-      let filteredPosts = posts
+      let filteredPosts = posts;
       if (userId) {
-        filteredPosts = posts.filter((post) => post.user.id === userId)
+        filteredPosts = posts.filter((post) => post.user.id === userId);
       }
 
       const postsHtml = filteredPosts
         .map((post) => {
-          const likesDisplay =
-            post.likes && Array.isArray(post.likes) && post.likes.length > 0
-              ? post.likes.map((user) => user.name).join(", ")
-              : "0";
+          let timeAgo = formatDistanceToNow(new Date(post.createdAt), {
+            locale: ru,
+            addSuffix: true
+          });
+          
+          const likesDisplay = post.likes && Array.isArray(post.likes) && post.likes.length > 0
+            ? post.likes.map((user) => user.name).join(", ")
+            : "0";
 
           return `
-          <li class="post">
-            <div class="post-header" data-user-id="${post.user.id}">
-                <img src="${
-                  post.user.imageUrl
-                }" class="post-header__user-image">
+            <li class="post">
+              <div class="post-header" data-user-id="${post.user.id}">
+                <img src="${post.user.imageUrl}" class="post-header__user-image">
                 <p class="post-header__user-name">${post.user.name}</p>
-            </div>
-            <div class="post-image-container">
-              <img class="post-image" src="${post.imageUrl}">
-            </div>
-            <div class="post-likes">
-              <button data-post-id="${post.id}" data-is-liked="${
-            post.isLiked
-          }" class="like-button">
-                <img src="./assets/images/${
-                  post.isLiked ? "like-active.svg" : "like-not-active.svg"
-                }">
-              </button>
-              <p class="post-likes-text">
-                Нравится: <strong>${likesDisplay}</strong>
+              </div>
+              <div class="post-image-container">
+                <img class="post-image" src="${post.imageUrl}">
+              </div>
+              <div class="post-likes">
+                <button data-post-id="${post.id}" data-is-liked="${post.isLiked}" class="like-button">
+                  <img src="./assets/images/${post.isLiked ? "like-active.svg" : "like-not-active.svg"}">
+                </button>
+                <p class="post-likes-text">
+                  Нравится: <strong>${likesDisplay}</strong>
+                </p>
+              </div>
+              <p class="post-text">
+                <span class="user-name">${post.user.name}</span>
+                ${post.description}
               </p>
-            </div>
-            <p class="post-text">
-              <span class="user-name">${post.user.name}</span>
-              ${post.description}
-            </p>
-          </li>`;
+              <p class="post-time">${timeAgo}</p>
+            </li>`;
         })
         .join("");
 
       appEl.innerHTML = `
-      <div class="page-container">
-        <div class="header-container"></div>
-        <ul class="posts">
-          ${postsHtml}
-        </ul>
-      </div>`;
+        <div class="page-container">
+          <div class="header-container"></div>
+          <ul class="posts">
+            ${postsHtml}
+          </ul>
+        </div>`;
 
       renderHeaderComponent({
         element: document.querySelector(".header-container"),
@@ -77,12 +78,7 @@ export function renderPostsPageComponent({ appEl, token, userId }) {
         button.addEventListener("click", () => {
           const postId = button.dataset.postId;
           const isLiked = button.dataset.isLiked === "true";
-          console.log(
-            "Нажат лайк:",
-            postId,
-            "Текущий статус:",
-            isLiked
-          );
+          console.log("Нажат лайк:", postId, "Текущий статус:", isLiked);
 
           toggleLike({ token, postId, isLiked })
             .then((updatedPost) => {
@@ -114,8 +110,7 @@ export function renderPostsPageComponent({ appEl, token, userId }) {
         if (postli) {
           const likesTextEl = postli.querySelector(".post-likes-text strong");
           if (likesTextEl) {
-            const likedUsers =
-              updatedPost.likes &&
+            const likedUsers = updatedPost.likes &&
               Array.isArray(updatedPost.likes) &&
               updatedPost.likes.length > 0
                 ? updatedPost.likes.map((user) => user.name).join(", ")
