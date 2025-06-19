@@ -1,5 +1,5 @@
-import { formatDistanceToNow } from "https://esm.sh/date-fns";
-import { ru } from "https://esm.sh/date-fns/locale";
+import { formatDistanceToNow } from 'date-fns';
+import { ru } from 'date-fns/locale';
 import { POSTS_PAGE, USER_POSTS_PAGE } from "../routes.js";
 import { renderHeaderComponent } from "./header-component.js";
 import { getPosts, toggleLike, postsHost } from "../api.js";
