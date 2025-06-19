@@ -15,14 +15,14 @@ import {
   removeUserFromLocalStorage,
   saveUserToLocalStorage,
 } from "./helpers.js";
+import { postsHost } from "./api.js";
 
 export let user = getUserFromLocalStorage();
 export let page = null;
 export let posts = [];
 
 const getToken = () => {
-  const token = user ? `Bearer ${user.token}` : undefined;
-  return token;
+return user ? `Bearer ${user.token}` : undefined;
 };
 
 export const logout = () => {
@@ -67,11 +67,11 @@ export const goToPage = (newPage, data) => {
     }
 
     if (newPage === USER_POSTS_PAGE) {
-      // @@TODO: реализовать получение постов юзера из API
-      console.log("Открываю страницу пользователя: ", data.userId);
-      page = USER_POSTS_PAGE;
-      posts = [];
-      return renderApp();
+      return renderPostsPageComponent({
+        appEl: document.getElementById("app"),
+        token: getToken(),
+        userId: data.userId,
+      });
     }
 
     page = newPage;
@@ -85,13 +85,7 @@ export const goToPage = (newPage, data) => {
 
 const renderApp = () => {
   const appEl = document.getElementById("app");
-  if (page === LOADING_PAGE) {
-    return renderLoadingPageComponent({
-      appEl,
-      user,
-      goToPage,
-    });
-  }
+  
 
   if (page === AUTH_PAGE) {
     return renderAuthPageComponent({
@@ -101,8 +95,7 @@ const renderApp = () => {
         saveUserToLocalStorage(user);
         goToPage(POSTS_PAGE);
       },
-      user,
-      goToPage,
+
     });
   }
 
@@ -110,9 +103,56 @@ const renderApp = () => {
     return renderAddPostPageComponent({
       appEl,
       onAddPostClick({ description, imageUrl }) {
-        // @TODO: реализовать добавление поста в API
-        console.log("Добавляю пост...", { description, imageUrl });
-        goToPage(POSTS_PAGE);
+ const token = getToken();
+
+        console.log("user.token:", user.token);
+        console.log("getToken():", token);
+
+        if (!token) {
+          alert("Вам нужно авторизоваться, чтобы добавить пост.");
+          return;
+        }
+
+        if (!description.trim()) {
+          alert("Добавьте описание.");
+          return;
+        }
+
+        if (!imageUrl) {
+          alert("Пожалуйста, загрузите изображение.");
+          return;
+        }
+
+        console.log("Отправляем пост...");
+        console.log("Описание:", description);
+        console.log("URL картинки:", imageUrl);
+        console.log("Token:", getToken());
+
+        fetch(postsHost, {
+          method: "POST",
+          headers: {
+            Authorization: token,
+          },
+          body: JSON.stringify({
+            description: description,
+            imageUrl: imageUrl,
+          }), 
+        })
+          .then(async (response) => {
+            console.log("Ответ сервера при добавлении поста:", response);
+            if (!response.ok) {
+              throw new Error(
+                `Ошибка при добавлении поста: ${response.status}`
+              );
+            }
+
+            console.log("Пост успешно добавлен!");
+            goToPage(POSTS_PAGE);
+          })
+          .catch((error) => {
+            console.error("Ошибка:", error);
+            alert(error.message);
+          });
       },
     });
   }
@@ -120,13 +160,8 @@ const renderApp = () => {
   if (page === POSTS_PAGE) {
     return renderPostsPageComponent({
       appEl,
+      token: getToken(),
     });
-  }
-
-  if (page === USER_POSTS_PAGE) {
-    // @TODO: реализовать страницу с фотографиями отдельного пользвателя
-    appEl.innerHTML = "Здесь будет страница фотографий пользователя";
-    return;
   }
 };
 
